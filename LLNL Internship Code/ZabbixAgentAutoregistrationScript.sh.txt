@@ -1,0 +1,53 @@
+#!/bin/bash
+#
+#
+#
+#
+#
+# Last Updated: Tue Sep  8 11:01:35 PDT 2020
+
+PING=/bin/ping
+ECHO=/bin/echo
+MKDIR=/bin/mkdir
+SSH=/usr/bin/ssh
+YUM=/usr/bin/yum
+SCP=/usr/bin/scp
+UNAME=/bin/uname
+GREP=/bin/grep
+
+
+hostname=$1
+$ECHO $hostname
+# ssh -q $hostname df -h
+
+if [ $# -gt 1 ]
+then
+$ECHO "Too many arguments!"
+else
+$PING -c 1 $hostname
+pingResponse=$?
+
+if [ $pingResponse -eq 0 ]
+then
+if $SSH -q -y $hostname "$UNAME -r |$GREP el7"
+then
+if $SSH -q $hostname "[ -d /etc/zabbix/ ]"
+then
+    $ECHO "Zabbix already exists."
+else
+    $ECHO "Zabbix does not exist (or ssh failure). Starting Zabbix install."
+    $SSH -q $hostname "$MKDIR /etc/zabbix/;chmod 755 /etc/zabbix/"
+    $SCP zabbix-agent2-5.0.2-1.el7.x86_64.rpm $hostname:/etc/zabbix/
+    $SSH -q $hostname "cd /etc/zabbix;$YUM -y install zabbix-agent2-5.0.2-1.el7.x86_64.rpm"
+    $SCP -q $hostname zabbix_agent2.conf $hostname:/etc/zabbix/
+    $SSH -q $hostname "systemctl enable zabbix-agent2;systemctl start zabbix-agent2"
+fi
+else
+$ECHO "The system is not el7!"
+fi
+elif [ $pingResponse -eq 1 ]
+then $ECHO "Host down!"
+else
+$ECHO "Unknown host!"
+fi
+fi

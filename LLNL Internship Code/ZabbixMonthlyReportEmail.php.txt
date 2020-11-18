@@ -1,0 +1,142 @@
+<?php
+/*
+*Description: This script queries the zabbix database and produces a monthly report of the triggers, events, time occurred  and the hosts associated.
+*
+* Author: Alyssa Ysabela Flores
+*
+* Last modified: Tue Sep 1 11:49:07 PDT 2020
+*/
+
+require_once 'Console/Table.php';
+
+$host = "localhost";
+$dbuser = "zabbix";
+$pass = "//////////";
+$db = "zabbix";
+
+$connection = mysqli_connect($host, $dbuser, $pass, $db) or die ("Unable to connect!");
+mysqli_select_db($connection, $db) or die ("Unable to select database!");
+
+
+
+////Problematic Areas
+
+
+        $sql = 'SELECT h.host as HOSTNAME, t.description as DESCRIPTION, t.priority as PRIORITY,'.
+                                ' FROM_UNIXTIME(MAX(t.lastchange)) as LAST_CHANGED, count(distinct e.eventid) as Events_Occurred '.
+                        ' FROM hosts h, triggers t, functions f, items i, events e'.
+                        ' WHERE h.hostid = i.hostid '.
+                                ' and i.itemid = f.itemid '.
+                                ' and t.triggerid=f.triggerid '.
+                        ' and t.triggerid=e.objectid '.
+                        ' and t.description NOT LIKE "%Configuration%"'.
+                        ' and t.description NOT LIKE "%Collector%"'.
+                        ' and t.description NOT LIKE "%Apache%"'.
+                        ' and t.description NOT LIKE "%Agent%"'.
+                        ' and t.description NOT LIKE "%Memory%"'.
+                        ' and t.description NOT LIKE "%inodes%"'.
+                        ' and t.description NOT LIKE "%sync%"'.
+                        ' and t.description NOT LIKE "%restarted%"'.
+                        ' and t.description NOT LIKE "%CPU%"'.
+                        ' and t.description NOT LIKE "%swap%"'.
+                        ' and t.description NOT LIKE "%changed%"'.
+
+                        ' and e.clock>'.(time()-30*86400).
+               // ' GROUP BY h.host,t.triggerid,t.description,t.expression,t.priority '.
+                ' GROUP BY h.host,t.triggerid,t.description,t.expression,t.priority '.
+               // ' ORDER BY Events_Occurred desc, h.host, t.description, t.triggerid';
+                ' ORDER BY PRIORITY DESC, h.host, LAST_CHANGED';
+
+
+$result = mysqli_query($connection, $sql);
+
+$numrows = mysqli_num_rows($result);
+
+
+
+/*$tbl = new Console_Table();
+$tbl->setHeaders(array('Hosts','Desc','Last_Changed','Events','Priority'));
+
+while($row = mysqli_fetch_array($result, MYSQLI_ASSOC))
+{
+$host = $row["HOSTNAME"];
+$desc = $row["DESCRIPTION"];
+$newdesc = wordwrap($desc, 90);
+$change = $row["LAST_CHANGED"];
+$events = $row["Events_Occurred"];
+$priority = $row["PRIORITY"];
+$tbl->addRow(array($host, $newdesc, $change, $events, $priority));
+}
+
+
+
+$monthlyrep=$tbl->getTable();
+echo $monthlyrep;*/
+
+$date=date("l jS \of F Y");
+
+$table = '
+<HTML>
+<style>
+table,
+th,
+td { padding: 10px;
+     border: 1px solid black;
+     border-collapse: collapse;
+}
+</style>
+<body>
+<table>
+<th>HOSTS</th>
+<th>TRIGGERS</th>
+<th>DATE</th>
+<th>AMOUNT TRIGGERED</th>
+<th>PRIORITY</th>
+';
+while($row = mysqli_fetch_array($result, MYSQLI_ASSOC))
+{
+
+$host = $row["HOSTNAME"];
+$desc = $row["DESCRIPTION"];
+// $newdesc = wordwrap($desc, 90);
+$change = $row["LAST_CHANGED"];
+$events = $row["Events_Occurred"];
+$priority = $row["PRIORITY"];
+
+
+
+$table .= <<<HTML_ROW
+
+<tr>
+<td>$host</td>
+<td>$desc</td>
+<td>$change</td>
+<td>$events</td>
+<td>$priority</td>
+</tr>
+
+HTML_ROW;
+
+}
+$table .= '
+</table>
+</body>
+</HTML>
+';
+
+$to      = 'flores70@llnl.gov';
+$subject = 'Zabbix Monthly Report - ';
+$subject .= $date;
+$message = $table;
+$headers1 = '<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional //EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>';
+$headers2 = 'From: zabbix@zabbix5.llnl.gov' . "\r\n" .
+    'Reply-To: donotreply@llnl.gov' . "\r\n" .
+    'X-Mailer: PHP/' . phpversion();
+$headers = $headers1.$headers2;
+$headers .= "MIME-Version: 1.0\r\n";
+$headers .= "Content-type: text/html\r\n";
+
+
+mail($to, $subject, $message, $headers);
+
+

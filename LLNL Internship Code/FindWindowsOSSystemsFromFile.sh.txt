@@ -1,0 +1,29 @@
+#!/bin/bash
+#
+# windowsOS.sh: a for-loop for listing out Windows OS numbers by directorate
+#
+# Author: Alyssa Flores
+#
+# Last Modified: Fri Jun 26 10:03:39 PDT 2020
+#
+
+
+ofile=windowsOS.out
+ofile2=windowsOS.csv
+
+
+printf "%10s %10s %10s %10s\n" "OS" "DIRECTORATE" "DIR TOTAL " "TOTAL" >> output/$ofile
+
+for os in "WIN10" "WIN7"
+do
+        total=`grep "$os" cmdb.csv |wc -l`
+        for directorate in COMP ENGR GS NIF PLS WCI DO 'O&B'
+        do
+                directorateTotal=`grep "$os" cmdb.csv |grep ",$directorate," |wc -l`
+                printf "%10s %10s %10s %10s\n" " " "$directorate " "$directorateTotal " " " >> output/$ofile
+                echo "$os,$directorate,$directorateTotal" >> output/$ofile2
+        done
+        printf "%10s %10s %10s %10s\n" "$os " " " " " "$total " >> output/$ofile
+
+done
+

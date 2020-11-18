@@ -1,0 +1,30 @@
+#!/bin/bash
+#
+# linuxRhelOS.sh: a for-loop for listing out Linux RHEL numbers by directorate
+#
+# Author: Alyssa Flores
+#
+# Last Modified: Fri Jul 31 15:28:54 PDT 2020
+# For loop attempt with Linux RHEL
+
+ofile=rhel.out
+ofile2=rhel.csv
+
+osList=`grep -o "RHEL ." cmdb.csv |sort -r |uniq`
+Field_Separator=$IFS
+
+printf "%10s %10s %10s %10s\n" "OS" "DIRECTORATE" "DIR TOTAL " "TOTAL" >> output/$ofile
+
+IFS=$'\n'
+for os in $osList
+do
+        total=`grep "$os" cmdb.csv |wc -l`
+        for directorate in COMP ENGR GS NIF PLS WCI DO 'O&B'
+        do
+               directorateTotal=`grep "$os" cmdb.csv |grep ",$directorate," |wc -l`
+                printf "%10s %10s %10s %10s\n" " " "$directorate " "$directorateTotal " " " >> output/$ofile
+                echo "$os,$directorate,$directorateTotal" >> output/$ofile2
+        done
+        IFS=$Field_Separator
+        printf "%10s %10s %10s %10s\n" "$os " " " " " "$total " >> output/$ofile
+done

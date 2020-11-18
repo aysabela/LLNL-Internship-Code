@@ -1,0 +1,31 @@
+#!/bin/bash
+#
+# linuxCentOS.sh: a for-loop for listing out Linux CentOS numbers by directorate
+#
+# Author: Alyssa Flores
+#
+# Last Modified: Fri Jun 26 09:41:06 PDT 2020
+#
+
+
+ofile=centos.out
+ofile2=centos.csv
+
+osList=`grep -o "CENTOS ." cmdb.csv |sort -r |uniq`
+Field_Separator=$IFS
+
+printf "%10s %10s %10s %10s\n" "OS" "DIRECTORATE" "DIR TOTAL " "TOTAL" >> output/$ofile
+
+IFS=$'\n'
+for os in $osList
+do
+        total=`grep "$os" cmdb.csv |wc -l`
+        for directorate in COMP ENGR GS NIF PLS WCI DO 'O&B'
+        do
+                directorateTotal=`grep "$os" cmdb.csv |grep ",$directorate," |wc -l`
+                printf "%10s %10s %10s %10s\n" " " "$directorate " "$directorateTotal " " " >> output/$ofile
+                echo "$os,$directorate,$directorateTotal" >> output/$ofile2
+        done
+        IFS=$Field_Separator
+        printf "%10s %10s %10s %10s\n" "$os " " " " " "$total " >> output/$ofile
+done
