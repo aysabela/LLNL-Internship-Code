@@ -1,5 +1,5 @@
 # LLNL-Internship-Code
-Hi! This is a collection of the different code I wrote for my internship at Lawrence Livermore National Laboratory. It is currently a work in progress as of (11/18/2020)
+Hi! This is a collection of the different code I wrote for my internship at Lawrence Livermore National Laboratory. It is currently a work in progress as of (11/18/2020).
 
 My first project involved me pulling data of different OS from different departments and counting them. This was written in Bash.
 My second (and bigger) project involved me utilizing a network management software called Zabbix. I had to write an autoregistration script to deploy agents
